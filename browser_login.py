@@ -139,10 +139,14 @@ def browser_login(
             while start < deadline:
                 page.wait_for_timeout(1000)
                 start += 1
-                if "signIn" not in page.url:
+                # 判断是否真正登录成功：跳转到主页（不再停留在任何 signIn/emailSignIn 页）。
+                # 必须大小写不敏感，否则 emailSignIn.html 会被误判为成功。
+                if "signin" not in page.url.lower():
                     print(f"[browser_login] 已跳转离开登录页: {page.url}")
                     ok = True
                     break
+                elif start % 10 == 0:
+                    print(f"[browser_login] 仍在登录页({start}s): {page.url[:100]}")
             if not ok:
                 print("[browser_login] 登录页未跳转，登录可能失败")
                 try:
