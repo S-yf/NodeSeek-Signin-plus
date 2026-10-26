@@ -304,6 +304,21 @@ def save_cookie(var_name: str, cookie: str):
 
 # ---------------- 登录逻辑 ----------------
 def session_login(user, password, solver_type, api_base_url, client_key):
+    # 优先使用浏览器登录（解决 FingerprintJS 签名问题，Cookie 失效时自动续期）
+    try:
+        from browser_login import browser_login as _browser_login
+        print("尝试使用浏览器登录获取新Cookie...")
+        _cookie = _browser_login(user, password, client_key, api_base_url)
+        if _cookie:
+            print("浏览器登录成功，已获取新Cookie")
+            return _cookie
+        print("浏览器登录失败，回退常规登录...")
+    except ImportError:
+        print("未加载 browser_login 模块，回退常规登录")
+    except Exception as e:
+        print(f"浏览器登录异常: {e}，回退常规登录")
+
+    # 以下为原有 curl_cffi 登录逻辑（缺少 FingerprintJS 签名通常会导致认证失败）
     # 先解决验证码拿到 token（nodeseek 要求放到请求头 x-captcha-token）
     if solver_type.lower() == "yescaptcha":
         print("正在使用 YesCaptcha 解决验证码...")

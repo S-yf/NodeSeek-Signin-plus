@@ -19,7 +19,14 @@ jobs:
           python-version: '3.11.8'
       - name: 安装依赖包
         run: |
-          pip install curl_cffi requests --upgrade
+          pip install curl_cffi requests playwright --upgrade
+      - name: 安装浏览器内核（Cookie续期用）
+        run: |
+          python -m playwright install chromium --with-deps || true
+          # 安装真实 Chrome（Cloudflare 识别度更低，Cookie 续期登录更稳）
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /tmp/chrome.deb || true
+          sudo apt-get update -y || true
+          sudo apt-get install -y /tmp/chrome.deb || true
       - name: 运行签到脚本
         env:
           # 基本账号

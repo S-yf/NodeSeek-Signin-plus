@@ -1,3 +1,4 @@
 curl_cffi==0.16.3
 requests>=2.34.2
 tzdata>=2026.5
+playwright>=1.44.0
