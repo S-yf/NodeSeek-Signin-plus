@@ -304,34 +304,28 @@ def save_cookie(var_name: str, cookie: str):
 
 # ---------------- 登录逻辑 ----------------
 def session_login(user, password, solver_type, api_base_url, client_key):
-    try:
-        if solver_type.lower() == "yescaptcha":
-            print("正在使用 YesCaptcha 解决验证码...")
-            solver = YesCaptchaSolver(
-                api_base_url=api_base_url or "https://api.yescaptcha.com",
-                client_key=client_key
-            )
-        else:  # 默认使用 turnstile_solver
-            print("正在使用 TurnstileSolver 解决验证码...")
-            solver = TurnstileSolver(
-                api_base_url=api_base_url,
-                client_key=client_key
-            )
-
-        token = solver.solve(
-            url="https://www.nodeseek.com/signIn.html",
-            sitekey="0x4AAAAAAAaNy7leGjewpVyR",
-            verbose=True
+    # 先解决验证码拿到 token（nodeseek 要求放到请求头 x-captcha-token）
+    if solver_type.lower() == "yescaptcha":
+        print("正在使用 YesCaptcha 解决验证码...")
+        solver = YesCaptchaSolver(
+            api_base_url=api_base_url or "https://api.yescaptcha.com",
+            client_key=client_key
         )
-        if not token:
-            print("验证码解析失败")
-            return None
-    except Exception as e:
-        _debug_print(f"验证码错误: {e}")
-        print(f"验证码错误")
+    else:
+        print("正在使用 TurnstileSolver 解决验证码...")
+        solver = TurnstileSolver(
+            api_base_url=api_base_url,
+            client_key=client_key
+        )
+    token = solver.solve(
+        url="https://www.nodeseek.com/signIn.html",
+        sitekey="0x4AAAAAAAaNy7leGjewpVyR",
+        verbose=True
+    )
+    if not token:
+        print("验证码解析失败")
         return None
 
-    # 优先使用环境变量指定的 IMPERSONATE_VERSION（若未设置则使用默认值），作为首次尝试的指纹
     initial_impersonate = IMPERSONATE_VERSION
     session = requests.Session(impersonate=initial_impersonate)
     print(f"[INFO] 使用初始 impersonate: {initial_impersonate}")
@@ -340,14 +334,15 @@ def session_login(user, password, solver_type, api_base_url, client_key):
     data = {
         "username": user,
         "password": password,
-       # "token": token,
-       # "source": "turnstile"
     }
     headers = {
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/signIn.html",
         'accept-language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        'Content-Type': "application/json"
+        'Content-Type': "application/json",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        'x-captcha-token': token,
+        'x-captcha-source': "turnstile",
     }
     try:
         response = session.post("https://www.nodeseek.com/api/account/signIn", json=data, headers=headers, timeout=REQUEST_TIMEOUT)
@@ -364,6 +359,7 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         _debug_print(f"登录异常: {e}")
         print("登录异常: 请求出错")
         return None
+
 
 # ---------------- 签到逻辑 ----------------
 def _is_cloudflare_challenge(text: str) -> bool:
