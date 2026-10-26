@@ -340,8 +340,8 @@ def session_login(user, password, solver_type, api_base_url, client_key):
     data = {
         "username": user,
         "password": password,
-        "token": token,
-        "source": "turnstile"
+       # "token": token,
+       # "source": "turnstile"
     }
     headers = {
         'origin': "https://www.nodeseek.com",
