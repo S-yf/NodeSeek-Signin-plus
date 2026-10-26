@@ -1,22 +1,18 @@
 name: nodeseek Automatic Check-in
-
 on:
   schedule:
     - cron: '59 23 * * *'  # 北京时间 00:00 (UTC+8)，对应UTC时间 16:00
   workflow_dispatch:
-
 permissions:
   contents: read
   actions: write  # 添加写入Actions变量的权限
-
 jobs:
   run-nodeseek-sign:
     runs-on: ubuntu-24.04
-
     steps:
       - name: 检出代码仓库
         uses: actions/checkout@v7
-      
+
       - name: 配置Python环境
         uses: actions/setup-python@v7
         with:
@@ -26,13 +22,12 @@ jobs:
         run: |
           pip install curl_cffi requests --upgrade
 
-
       - name: 运行签到脚本
         env:
           # 基本账号
           USER: ${{ secrets.USER }}
           PASS: ${{ secrets.PASS }}
-          
+
           # 额外账号1-5
           USER1: ${{ secrets.USER1 }}
           PASS1: ${{ secrets.PASS1 }}
@@ -44,7 +39,7 @@ jobs:
           PASS4: ${{ secrets.PASS4 }}
           USER5: ${{ secrets.USER5 }}
           PASS5: ${{ secrets.PASS5 }}
-          
+
           # Cookie配置
           NS_COOKIE: ${{ vars.NS_COOKIE || secrets.NS_COOKIE }}
           NS_RANDOM: ${{ secrets.NS_RANDOM }}
@@ -52,17 +47,17 @@ jobs:
           SOLVER_TYPE: ${{ secrets.SOLVER_TYPE }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           CLIENT_KEY: ${{ secrets.CLIENT_KEY }}
-          
+
           # GitHub API配置
           GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          
+
           # 指纹配置
           NS_IMPERSONATE: ${{ secrets.NS_IMPERSONATE || 'chrome110' }}
-
           # 通知推送配置
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_USER_ID: ${{ secrets.TG_USER_ID }}
           TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
-
-        run: python nodeseek_sign.py
+        run: |
+          python -u nodeseek_sign.py 2>&1
+          echo "EXIT_CODE=$?"
